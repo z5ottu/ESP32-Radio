@@ -50,7 +50,7 @@
 // ESP32dev Signal  Wired to LCD        Wired to VS1053      SDCARD   Wired to the rest
 // -------- ------  --------------      -------------------  ------   ---------------
 // GPIO32           -                   pin 1 XDCS            -       -
-// GPIO5            -                   pin 2 XCS             -       -
+// GPIO5            -                   pin 2 XCS             -       -VS1053 not properly installed
 // GPIO4            -                   pin 4 DREQ            -       -
 // GPIO2            pin 3 D/C or A0     -                     -       -
 // GPIO22           -                   -                     CS      -
@@ -160,14 +160,15 @@
 #define TFTFILE     "/Arduino/ESP32-Radio.tft"          // Binary file name for update NEXTION image
 //
 // Define (just one) type of display.  See documentation.
-#define BLUETFT                        // Works also for RED TFT 128x160
+//#define BLUETFT                        // Works also for RED TFT 128x160
 //#define OLED                         // 64x128 I2C OLED
-//#define DUMMYTFT                     // Dummy display
+#define DUMMYTFT                     // Dummy display
 //#define LCD1602I2C                   // LCD 1602 display with I2C backpack
 //#define ILI9341                      // ILI9341 240*320
 //#define NEXTION                      // Nextion display. Uses UART 2 (pin 16 and 17)
 //
 #include <nvs.h>
+#include <nvs_flash.h>
 #include <PubSubClient.h>
 #include <WiFiMulti.h>
 #include <ESPmDNS.h>
@@ -185,6 +186,10 @@
 #include <driver/adc.h>
 #include <Update.h>
 #include <base64.h>
+
+// 
+#include <VS1053.h>
+
 // Number of entries in the queue
 #define QSIZ 400
 // Debug buffer size
@@ -654,7 +659,7 @@ mqttpubc         mqttpub ;                                    // Instance for mq
 //**************************************************************************************************
 // VS1053 class definition.                                                                        *
 //**************************************************************************************************
-class VS1053
+class VS1053CLASS
 {
   private:
     int8_t        cs_pin ;                         // Pin where CS line is connected
@@ -731,7 +736,7 @@ class VS1053
 
   public:
     // Constructor.  Only sets pin values.  Doesn't touch the chip.  Be sure to call begin()!
-    VS1053 ( int8_t _cs_pin, int8_t _dcs_pin, int8_t _dreq_pin,
+    VS1053CLASS ( int8_t _cs_pin, int8_t _dcs_pin, int8_t _dreq_pin,
              int8_t _shutdown_pin, int8_t _shutdownx_pin ) ;
     void     begin() ;                                   // Begin operation.  Sets pins correctly,
     // and prepares SPI bus.
@@ -766,14 +771,14 @@ class VS1053
 // VS1053 class implementation.                                                                    *
 //**************************************************************************************************
 
-VS1053::VS1053 ( int8_t _cs_pin, int8_t _dcs_pin, int8_t _dreq_pin,
+VS1053CLASS::VS1053CLASS ( int8_t _cs_pin, int8_t _dcs_pin, int8_t _dreq_pin,
                  int8_t _shutdown_pin, int8_t _shutdownx_pin ) :
   cs_pin(_cs_pin), dcs_pin(_dcs_pin), dreq_pin(_dreq_pin), shutdown_pin(_shutdown_pin),
   shutdownx_pin(_shutdownx_pin)
 {
 }
 
-uint16_t VS1053::read_register ( uint8_t _reg ) const
+uint16_t VS1053CLASS::read_register ( uint8_t _reg ) const
 {
   uint16_t result ;
 
@@ -788,7 +793,7 @@ uint16_t VS1053::read_register ( uint8_t _reg ) const
   return result ;
 }
 
-void VS1053::write_register ( uint8_t _reg, uint16_t _value ) const
+void VS1053CLASS::write_register ( uint8_t _reg, uint16_t _value ) const
 {
   control_mode_on( );
   SPI.write ( 2 ) ;                                // Write operation
@@ -798,7 +803,7 @@ void VS1053::write_register ( uint8_t _reg, uint16_t _value ) const
   control_mode_off() ;
 }
 
-bool VS1053::sdi_send_buffer ( uint8_t* data, size_t len )
+bool VS1053CLASS::sdi_send_buffer ( uint8_t* data, size_t len )
 {
   size_t chunk_length ;                            // Length of chunk 32 byte or shorter
 
@@ -819,7 +824,7 @@ bool VS1053::sdi_send_buffer ( uint8_t* data, size_t len )
   return data_request() ;                          // True if more data can de stored in fifo
 }
 
-void VS1053::sdi_send_fillers ( size_t len )
+void VS1053CLASS::sdi_send_fillers ( size_t len )
 {
   size_t chunk_length ;                            // Length of chunk 32 byte or shorter
 
@@ -841,19 +846,19 @@ void VS1053::sdi_send_fillers ( size_t len )
   data_mode_off();
 }
 
-void VS1053::wram_write ( uint16_t address, uint16_t data )
+void VS1053CLASS::wram_write ( uint16_t address, uint16_t data )
 {
   write_register ( SCI_WRAMADDR, address ) ;
   write_register ( SCI_WRAM, data ) ;
 }
 
-uint16_t VS1053::wram_read ( uint16_t address )
+uint16_t VS1053CLASS::wram_read ( uint16_t address )
 {
   write_register ( SCI_WRAMADDR, address ) ;            // Start reading from WRAM
   return read_register ( SCI_WRAM ) ;                   // Read back result
 }
 
-bool VS1053::testComm ( const char *header )
+bool VS1053CLASS::testComm ( const char *header )
 {
   // Test the communication with the VS1053 module.  The result wille be returned.
   // If DREQ is low, there is problably no VS1053 connected.  Pull the line HIGH
@@ -901,12 +906,12 @@ bool VS1053::testComm ( const char *header )
     dbgprint ( "This is not a VS1053, "                 // Report the wrong chip
                "but a VS%d instead!",
                vstype[r1] ) ;
-    okay = false ;
+    //okay = false ;
   }
   return ( okay ) ;                                     // Return the result
 }
 
-void VS1053::begin()
+void VS1053CLASS::begin()
 {
   pinMode      ( dreq_pin,  INPUT ) ;                   // DREQ is an input
   pinMode      ( cs_pin,    OUTPUT ) ;                  // The SCI and SDI signals
@@ -957,7 +962,7 @@ void VS1053::begin()
   }
 }
 
-void VS1053::setVolume ( uint8_t vol )
+void VS1053CLASS::setVolume ( uint8_t vol )
 {
   // Set volume.  Both left and right.
   // Input value is 0..100.  100 is the loudest.
@@ -974,7 +979,7 @@ void VS1053::setVolume ( uint8_t vol )
   }
 }
 
-void VS1053::setTone ( uint8_t *rtone )                 // Set bass/treble (4 nibbles)
+void VS1053CLASS::setTone ( uint8_t *rtone )                 // Set bass/treble (4 nibbles)
 {
   // Set tone characteristics.  See documentation for the 4 nibbles.
   uint16_t value = 0 ;                                  // Value to send to SCI_BASS
@@ -987,18 +992,18 @@ void VS1053::setTone ( uint8_t *rtone )                 // Set bass/treble (4 ni
   write_register ( SCI_BASS, value ) ;                  // Volume left and right
 }
 
-void VS1053::startSong()
+void VS1053CLASS::startSong()
 {
   sdi_send_fillers ( 10 ) ;
   output_enable ( true ) ;                              // Enable amplifier through shutdown pin(s)
 }
 
-bool VS1053::playChunk ( uint8_t* data, size_t len )
+bool VS1053CLASS::playChunk ( uint8_t* data, size_t len )
 {
   return okay && sdi_send_buffer ( data, len ) ;        // True if more data can be added to fifo
 }
 
-void VS1053::stopSong()
+void VS1053CLASS::stopSong()
 {
   uint16_t modereg ;                                    // Read from mode register
   int      i ;                                          // Loop control
@@ -1022,14 +1027,14 @@ void VS1053::stopSong()
   printDetails ( "Song stopped incorrectly!" ) ;
 }
 
-void VS1053::softReset()
+void VS1053CLASS::softReset()
 {
   write_register ( SCI_MODE, _BV ( SM_SDINEW ) | _BV ( SM_RESET ) ) ;
   delay ( 10 ) ;
   await_data_request() ;
 }
 
-void VS1053::printDetails ( const char *header )
+void VS1053CLASS::printDetails ( const char *header )
 {
   uint16_t     regbuf[16] ;
   uint8_t      i ;
@@ -1048,7 +1053,7 @@ void VS1053::printDetails ( const char *header )
   }
 }
 
-void  VS1053::output_enable ( bool ena )               // Enable amplifier through shutdown pin(s)
+void  VS1053CLASS::output_enable ( bool ena )               // Enable amplifier through shutdown pin(s)
 {
   if ( shutdown_pin >= 0 )                             // Shutdown in use?
   {
@@ -1061,7 +1066,7 @@ void  VS1053::output_enable ( bool ena )               // Enable amplifier throu
 }
 
 
-void VS1053::AdjustRate ( long ppm2 )                  // Fine tune the data rate 
+void VS1053CLASS::AdjustRate ( long ppm2 )                  // Fine tune the data rate 
 {
   write_register ( SCI_WRAMADDR, 0x1e07 ) ;
   write_register ( SCI_WRAM,     ppm2 ) ;
@@ -1075,7 +1080,13 @@ void VS1053::AdjustRate ( long ppm2 )                  // Fine tune the data rat
 
 
 // The object for the MP3 player
-VS1053* vs1053player ;
+VS1053CLASS* vs1053player ;
+
+// z5ottu
+#define VS1053_CS    32 //32
+#define VS1053_DCS   33  //33
+#define VS1053_DREQ 2 //15
+VS1053 player(VS1053_CS, VS1053_DCS, VS1053_DREQ);
 
 //**************************************************************************************************
 // End VS1053 stuff.                                                                               *
@@ -3558,14 +3569,18 @@ void setup()
     dbgprint ( "GPIO%d is %s", pinnr, p ) ;
   }
   readprogbuttons() ;                                    // Program the free input pins
-  SPI.begin ( ini_block.spi_sck_pin,                     // Init VSPI bus with default or modified pins
+  
+  /*SPI.begin ( ini_block.spi_sck_pin,                     // Init VSPI bus with default or modified pins
               ini_block.spi_miso_pin,
               ini_block.spi_mosi_pin ) ;
-  vs1053player = new VS1053 ( ini_block.vs_cs_pin,       // Make instance of player
+  vs1053player = new VS1053CLASS ( ini_block.vs_cs_pin,       // Make instance of player
                               ini_block.vs_dcs_pin,
                               ini_block.vs_dreq_pin,
                               ini_block.vs_shutdown_pin,
                               ini_block.vs_shutdownx_pin ) ;
+  */
+ SPI.begin();
+
   if ( ini_block.ir_pin >= 0 )
   {
     dbgprint ( "Enable pin %d for IR",
@@ -3637,8 +3652,10 @@ void setup()
   readprefs ( false ) ;                                  // Read preferences
   tcpip_adapter_set_hostname ( TCPIP_ADAPTER_IF_STA,
                                NAME ) ;
-  vs1053player->begin() ;                                // Initialize VS1053 player
-  delay(10);
+  //vs1053player->begin() ;                                // Initialize VS1053 player
+  player.begin();
+
+  delay(1);
   p = dbgprint ( "Connect to WiFi" ) ;                   // Show progress
   tftlog ( p ) ;                                         // On TFT too
   NetworkFound = connectwifi() ;                         // Connect to WiFi network
@@ -4586,6 +4603,7 @@ void mp3loop()
 //**************************************************************************************************
 void loop()
 {
+  // nvsclear();
   mp3loop() ;                                       // Do mp3 related actions
   if ( updatereq )                                  // Software update requested?
   {
@@ -5249,7 +5267,8 @@ const char* analyzeCmd ( const char* par, const char* val )
   if ( argument.indexOf ( "volume" ) >= 0 )           // Volume setting?
   {
     // Volume may be of the form "upvolume", "downvolume" or "volume" for relative or absolute setting
-    oldvol = vs1053player->getVolume() ;              // Get current volume
+    //oldvol = vs1053player->getVolume() ;              // Get current volume
+    oldvol = player.getVolume();
     if ( relative )                                   // + relative setting?
     {
       ini_block.reqvol = oldvol + ivalue ;            // Up/down by 0.5 or more dB
@@ -5419,7 +5438,8 @@ const char* analyzeCmd ( const char* par, const char* val )
   }
   else if ( argument == "rate" )                      // Rate command?
   {
-    vs1053player->AdjustRate ( ivalue ) ;             // Yes, adjust
+    //vs1053player->AdjustRate ( ivalue ) ;             // Yes, adjust
+    // player.
   }
   else if ( argument.startsWith ( "mqtt" ) )          // Parameter fo MQTT?
   {
@@ -5631,33 +5651,41 @@ void playtask ( void * parameter )
   {
     if ( xQueueReceive ( dataqueue, &inchunk, 5 ) )
     {
-      while ( !vs1053player->data_request() )                       // If FIFO is full..
+      /* while ( !vs1053player->data_request() )                       // If FIFO is full..
       {
         vTaskDelay ( 1 ) ;                                          // Yes, take a break
-      }
+      }*/
+      while (!digitalRead(VS1053_DREQ)) {
+          vTaskDelay ( 1 ) ;
+      }      
       switch ( inchunk.datatyp )                                    // What kind of chunk?
       {
         case QDATA:
-          claimSPI ( "chunk" ) ;                                    // Claim SPI bus
-          vs1053player->playChunk ( inchunk.buf,                    // DATA, send to player
+          //claimSPI ( "chunk" ) ;                                    // Claim SPI bus
+          /*vs1053player->playChunk ( inchunk.buf,                    // DATA, send to player
                                     sizeof(inchunk.buf) ) ;
-          releaseSPI() ;                                            // Release SPI bus
+          */
+          player.playChunk(inchunk.buf, sizeof(inchunk.buf) );
+          //releaseSPI() ;                                            // Release SPI bus
           totalcount += sizeof(inchunk.buf) ;                       // Count the bytes
           break ;
         case QSTARTSONG:
           playingstat = 1 ;                                         // Status for MQTT
           mqttpub.trigger ( MQTT_PLAYING ) ;                        // Request publishing to MQTT
-          claimSPI ( "startsong" ) ;                                // Claim SPI bus
-          vs1053player->startSong() ;                               // START, start player
-          releaseSPI() ;                                            // Release SPI bus
+          //claimSPI ( "startsong" ) ;                                // Claim SPI bus
+          //vs1053player->startSong() ;                               // START, start player
+          player.startSong();
+          //releaseSPI() ;                                            // Release SPI bus
           break ;
         case QSTOPSONG:
           playingstat = 0 ;                                         // Status for MQTT
           mqttpub.trigger ( MQTT_PLAYING ) ;                        // Request publishing to MQTT
-          claimSPI ( "stopsong" ) ;                                 // Claim SPI bus
-          vs1053player->setVolume ( 0 ) ;                           // Mute
-          vs1053player->stopSong() ;                                // STOP, stop player
-          releaseSPI() ;                                            // Release SPI bus
+          //claimSPI ( "stopsong" ) ;                                 // Claim SPI bus
+          player.setVolume(0);
+          player.stopSong();
+          //vs1053player->setVolume ( 0 ) ;                           // Mute
+          //vs1053player->stopSong() ;                                // STOP, stop player
+          //releaseSPI() ;                                            // Release SPI bus
           vTaskDelay ( 500 / portTICK_PERIOD_MS ) ;                 // Pause for a short time
           break ;
         default:
@@ -5698,16 +5726,19 @@ void handle_spec()
   claimSPI ( "hspec" ) ;                                      // Claim SPI bus
   if ( muteflag )                                             // Mute or not?
   {
-    vs1053player->setVolume ( 0 ) ;                           // Mute
+    //vs1053player->setVolume ( 0 ) ;                           // Mute
+    player.setVolume(0);
   }
   else
   {
-    vs1053player->setVolume ( ini_block.reqvol ) ;            // Unmute
+    //vs1053player->setVolume ( ini_block.reqvol ) ;            // Unmute
+    player.setVolume(ini_block.reqvol);
   }
   if ( reqtone )                                              // Request to change tone?
   {
     reqtone = false ;
-    vs1053player->setTone ( ini_block.rtone ) ;               // Set SCI_BASS to requested value
+    // vs1053player->setTone ( ini_block.rtone ) ;               // Set SCI_BASS to requested value
+    player.setTone(ini_block.rtone);
   }
   if ( time_req )                                             // Time to refresh timetxt?
   {

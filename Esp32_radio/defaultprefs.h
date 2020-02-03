@@ -18,8 +18,7 @@ mqttuser = none
 mqttpasswd = none
 mqqprefix = none
 # Enter your WiFi network specs here:
-wifi_00 = SSID1/PASSWD1
-wifi_01 = SSID2/PASSWD2
+
 #
 volume = 72
 toneha = 0
@@ -29,7 +28,7 @@ tonelf = 0
 #
 preset = 6
 # Some preset examples
-preset_00 = 109.206.96.34:8100                       #  0 - NAXI LOVE RADIO, Belgrade, Serbia
+preset_00 = 149.255.59.162:8062/1                    #  0 - uk 40 hits
 preset_01 = airspectrum.cdnstream1.com:8114/1648_128 #  1 - Easy Hits Florida 128k
 preset_02 = us2.internet-radio.com:8050              #  2 - CLASSIC ROCK MIAMI 256k
 preset_03 = airspectrum.cdnstream1.com:8000/1261_192 #  3 - Magic Oldies Florida
@@ -43,7 +42,7 @@ preset_10 = ihr/IHR_IEDM                             # 10 - iHeartRadio IHR_IEDM
 preset_11 = ihr/IHR_TRAN                             # 11 - iHeartRadio IHR_TRAN
 #
 # Clock offset and daylight saving time
-clk_server = pool.ntp.org                            # Time server to be used
+clk_server = hu.pool.ntp.org                            # Time server to be used
 clk_offset = 1                                       # Offset with respect to UTC in hours
 clk_dst = 1                                          # Offset during daylight saving time (hours)
 # Some IR codes

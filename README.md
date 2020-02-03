@@ -1,8 +1,40 @@
 # ESP32-Radio
-Internet radio based on ESP32, VS1053 and a TFT screen.  Will compile in Arduino IDE.
-See the review by Andreas Spiess at https://www.youtube.com/watch?v=hz65vfvbXMs.
+Internet radio based on ESP32, VS1003-M/VS1053. Will compile in Arduino IDE. 
 
-Look for documentation and printdesign in the doc directory.
+Requirements:
+
+Installed plaformio
+
+
+```shell
+git clone https://github.com/baldram/ESP_VS1053_Library.git
+```
+
+
+Do some modifications in platformio.ini:
+```
+    [env:esp32dev]
+    platform = espressif32
+    board = esp32dev
+    framework = arduino
+```
+
+Maybe required step (in ESP_VS1053_Library folder):
+```shell
+platformio run
+```
+
+
+Add ESP_VS1053_Library to Arduino (1.8.x)
+
+Sketch -> Include Library -> Add .ZIP Library... (you should select the ESP_VS1053_Library folder name)
+
+
+Install ArduinoLog library to Arduino (1.8.x)
+
+Tools -> Library Manager (search ArduinoLog and install)
+
+
 
 Features:
 -	Can connect to thousands of Internet radio stations that broadcast MP3 or Ogg audio streams.
@@ -10,7 +42,7 @@ Features:
 - Support for .m3u playlists.
 - Can play mp3 tracks from SD card.
 -	Uses a minimal number of components; no Arduino required.
--	Handles bitrates up to 320 kbps.
+-	~~ Handles bitrates up to 320 kbps. ~~ AdjustRate for VS1003-M/VS1053 not implemented yet
 -	Has a preset list of maximal 100 favorite radio stations in configuration file.
 - Configuration (preferences) can be edited through web interface.
 -	Can be controlled by a tablet or other device through a build-in webserver.
@@ -33,9 +65,11 @@ Features:
 - Optional display remaining battery capacity on screen.
 - PCB available (see doc).
 
-See documentation in doc/pdf-file.
+~~ See documentation in doc/pdf-file. ~~ not updated
 
 Last changes:
+- 02-feb-2020, Quick and dirty changes for VS1003-M/VS1053.
+***
 - 21-dec-2019, Check for right (VS1053) CHIP.
 - 16-dec-2019, Better logging claimSPI for debug.
 - 24-apr-2019, Better handling of gettim().

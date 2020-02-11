@@ -5372,6 +5372,14 @@ const char* analyzeCmd ( const char* par, const char* val )
   }
   else if ( argument == "status" )                    // Status request
   {
+    mqttpub.trigger ( MQTT_PLAYING ) ;                        // Request publishing to MQTT
+    mqttpub.trigger ( MQTT_STREAMTITLE ) ;                  // Request publishing to MQTT
+    mqttpub.trigger ( MQTT_IP ) ;                         // Publish own IP
+    mqttpub.trigger ( MQTT_VOLUME ) ;                      // Request publish VOLUME
+    mqttpub.trigger ( MQTT_PRESET ) ;                     // Request publishing to MQTT
+    mqttpub.trigger ( MQTT_ICYNAME ) ;           // Request publishing to MQTT
+    mqttpub.trigger ( MQTT_PLAYLISTPOS ) ;         // Playlistposition to MQTT
+    
     if ( datamode == STOPPED )
     {
       sprintf ( reply, "Player stopped" ) ;           // Format reply

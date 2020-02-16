@@ -1088,6 +1088,7 @@ VS1053CLASS* vs1053player ;
 #define VS1053_DREQ 2 //15
 VS1053 player(VS1053_CS, VS1053_DCS, VS1053_DREQ);
 
+
 //**************************************************************************************************
 // End VS1053 stuff.                                                                               *
 //**************************************************************************************************
@@ -3579,6 +3580,9 @@ void setup()
                               ini_block.vs_shutdown_pin,
                               ini_block.vs_shutdownx_pin ) ;
   */
+
+ pinMode ( ini_block.vs_shutdownx_pin,   OUTPUT ) ;
+ digitalWrite ( ini_block.vs_shutdownx_pin, HIGH ) ;
  SPI.begin();
 
   if ( ini_block.ir_pin >= 0 )
@@ -5339,10 +5343,12 @@ const char* analyzeCmd ( const char* par, const char* val )
 
     {
       datamode = STOPREQD ;                           // Request STOP
+      digitalWrite ( 22, HIGH ) ;
     }
     else
     {
       hostreq = true ;                                // Request UNSTOP
+      digitalWrite ( 22, LOW ) ;
     }
   }
   else if ( ( value.length() > 0 ) &&

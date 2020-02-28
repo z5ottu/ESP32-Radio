@@ -1963,6 +1963,7 @@ void IRAM_ATTR isr_enc_switch()
 
   // Read current state of SW pin
   newstate = ( digitalRead ( ini_block.enc_sw_pin ) == LOW ) ;
+  dbgprint ( "newstate sw: %d ", digitalRead ( ini_block.enc_sw_pin ) ) ;
   newtime = millis() ;
   if ( newtime == oldtime )                                // Debounce
   {
@@ -4310,6 +4311,11 @@ void chk_enc()
   {
     dbgprint ( "Single click") ;
     singleclick = false ;
+    if ( datamode == STOPPED )
+    {
+      hostreq = true ;                                      // Request this host
+      muteflag = false ;                                      // Be sure muteing is off
+    }
     switch ( enc_menu_mode )                                  // Which mode (VOLUME, PRESET, TRACK)?
     {
       case VOLUME :
@@ -5343,12 +5349,14 @@ const char* analyzeCmd ( const char* par, const char* val )
 
     {
       datamode = STOPREQD ;                           // Request STOP
-      digitalWrite ( 22, HIGH ) ;
+      // digitalWrite ( 22, HIGH ) ;
+      digitalWrite ( ini_block.vs_shutdownx_pin, HIGH ) ;
     }
     else
     {
       hostreq = true ;                                // Request UNSTOP
-      digitalWrite ( 22, LOW ) ;
+      // digitalWrite ( 22, LOW ) ;
+      digitalWrite ( ini_block.vs_shutdownx_pin, HIGH ) ;
     }
   }
   else if ( ( value.length() > 0 ) &&
@@ -5686,6 +5694,7 @@ void playtask ( void * parameter )
         case QSTARTSONG:
           playingstat = 1 ;                                         // Status for MQTT
           mqttpub.trigger ( MQTT_PLAYING ) ;                        // Request publishing to MQTT
+          digitalWrite ( ini_block.vs_shutdownx_pin, LOW ) ;
           //claimSPI ( "startsong" ) ;                                // Claim SPI bus
           //vs1053player->startSong() ;                               // START, start player
           player.startSong();
@@ -5694,6 +5703,7 @@ void playtask ( void * parameter )
         case QSTOPSONG:
           playingstat = 0 ;                                         // Status for MQTT
           mqttpub.trigger ( MQTT_PLAYING ) ;                        // Request publishing to MQTT
+          digitalWrite ( ini_block.vs_shutdownx_pin, HIGH ) ;
           //claimSPI ( "stopsong" ) ;                                 // Claim SPI bus
           player.setVolume(0);
           player.stopSong();

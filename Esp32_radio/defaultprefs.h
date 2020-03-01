@@ -63,3 +63,38 @@ pin_vs_cs = 5                                        # GPIO Pin number for VS105
 pin_vs_dcs = 32                                      # GPIO Pin number for VS1053 "DCS"
 pin_vs_dreq = 4                                      # GPIO Pin number for VS1053 "DREQ"
 )=====" ;
+
+// working comfing
+// clk_dst = 1                                          # Offset during daylight saving time (hours)
+// clk_offset = 1                                       # Offset with respect to UTC in hours
+// clk_server = hu.pool.ntp.org                            # Time server to be used
+// #
+// lstmods = Sat, 21 Dec 2019 09:36:26 GMT
+// #
+// mqttbroker = // mqtt broker
+// mqttpasswd = // password
+// mqttport = 1883
+// mqttprefix = // topic
+// mqttuser = // username
+// #
+// pin_enc_clk = 25                                     # GPIO Pin number for rotary encoder "CLK"
+// pin_enc_dt = 26                                      # GPIO Pin number for rotary encoder "DT"
+// pin_enc_sw = 21                                      # GPIO Pin number for rotary encoder "SW"
+// pin_shutdownx = 22
+// pin_vs_cs = 32                                        # GPIO Pin number for VS1053 "CS"
+// pin_vs_dcs = 33                                      # GPIO Pin number for VS1053 "DCS"
+// pin_vs_dreq = 15                                      # GPIO Pin number for VS1053 "DREQ"
+// #
+// preset = 2
+// preset_00 = 149.255.59.162:8062/1
+// preset_01 = stream.tilos.hu/tilos_128.mp3
+// preset_02 = radio.nordtelekom.hu:8000/gazdasagiradio
+// preset_03 = stream.klubradio.hu:8080/bpstream
+// #
+// toneha = 6
+// tonehf = 1
+// tonela = 3
+// tonelf = 2
+// #
+// volume = 0
+// #

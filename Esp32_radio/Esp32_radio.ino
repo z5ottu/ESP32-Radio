@@ -202,7 +202,7 @@
 // Max number of presets in preferences
 #define MAXPRESETS 200
 // Maximum number of MQTT reconnects before give-up
-#define MAXMQTTCONNECTS 5
+#define MAXMQTTCONNECTS 10
 // Adjust size of buffer to the longest expected string for nvsgetstr
 #define NVSBUFSIZE 150
 // Position (column) of time in topline relative to end
@@ -1865,33 +1865,35 @@ void IRAM_ATTR timer100()
     enc_inactivity = 1000 ;                       // Prevent wrap
   }
   // Now detection of single/double click of rotary encoder switch
-  if ( clickcount )                               // Any click?
+  if ( clickcount )                               // Only single click
   {
-    if ( oldclickcount == clickcount )            // Yes, stable situation?
-    {
-      if ( ++eqcount == 4 )                       // Long time stable?
-      {
-        eqcount = 0 ;
-        if ( clickcount > 2 )                     // Triple click?
-        {
-          tripleclick = true ;                    // Yes, set result
-        }
-        else if ( clickcount == 2 )               // Double click?
-        {
-          doubleclick = true ;                    // Yes, set result
-        }
-        else
-        {
-          singleclick = true ;                    // Just one click seen
-        }
-        clickcount = 0 ;                          // Reset number of clicks
-      }
-    }
-    else
-    {
-      oldclickcount = clickcount ;                // To detect change
-      eqcount = 0 ;                               // Not stable, reset count
-    }
+    singleclick = true ;                    // Just one click seen
+    clickcount = 0 ;                          // Reset number of clicks
+    // if ( oldclickcount == clickcount )            // Yes, stable situation?
+    // {
+    //   if ( ++eqcount == 4 )                       // Long time stable?
+    //   {
+    //     eqcount = 0 ;
+    //     if ( clickcount > 2 )                     // Triple click?
+    //     {
+    //       tripleclick = true ;                    // Yes, set result
+    //     }
+    //     else if ( clickcount == 2 )               // Double click?
+    //     {
+    //       doubleclick = true ;                    // Yes, set result
+    //     }
+    //     else
+    //     {
+    //       singleclick = true ;                    // Just one click seen
+    //     }
+    //     clickcount = 0 ;                          // Reset number of clicks
+    //   }
+    // }
+    // else
+    // {
+    //   oldclickcount = clickcount ;                // To detect change
+    //   eqcount = 0 ;                               // Not stable, reset count
+    // }
   }
 }
 
@@ -4307,10 +4309,10 @@ void chk_enc()
              "Press to confirm" ) ;
     enc_preset = ini_block.newpreset + 1 ;                    // Start with current preset + 1
   }
-  if ( singleclick )
+  if ( longclick )
   {
-    dbgprint ( "Single click") ;
-    singleclick = false ;
+    dbgprint ( "Long click") ;
+    longclick = false ;
     if ( datamode == STOPPED )
     {
       hostreq = true ;                                      // Request this host
@@ -4343,22 +4345,15 @@ void chk_enc()
         break ;
     }
   }
-  if ( longclick )                                            // Check for long click
+  if ( singleclick )                                            // Check for singleclick click
   {
-    dbgprint ( "Long click") ;
+    dbgprint ( "singleclick click") ;
+    singleclick = false ;
     if ( datamode != STOPPED )
     {
       datamode = STOPREQD ;                                   // Request STOP, do not touch logclick flag
-    }
-    else
-    {
-      longclick = false ;                                     // Reset condition
-      dbgprint ( "Long click detected" ) ;
-      if ( SD_nodecount )                                     // Tracks on SD?
-      {
-        host = getSDfilename ( "0" ) ;                        // Get random track
-        hostreq = true ;                                      // Request this host
-      }
+    }else{
+      hostreq = true ;                                      // Request this host
       muteflag = false ;                                      // Be sure muteing is off
     }
   }

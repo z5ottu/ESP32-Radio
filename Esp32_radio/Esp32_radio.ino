@@ -282,6 +282,7 @@ struct ini_struct
   int8_t         ir_pin ;                             // GPIO connected to output of IR decoder
   int8_t         enc_clk_pin ;                        // GPIO connected to CLK of rotary encoder
   int8_t         enc_dt_pin ;                         // GPIO connected to DT of rotary encoder
+  int8_t         enc_preset_dt_pin ;                  // GPIO connected to preset DT of rotary encoder
   int8_t         enc_sw_pin ;                         // GPIO connected to SW of rotary encoder
   int8_t         tft_cs_pin ;                         // GPIO connected to CS of TFT screen
   int8_t         tft_dc_pin ;                         // GPIO connected to D/C or A0 of TFT screen
@@ -2047,6 +2048,50 @@ void IRAM_ATTR isr_enc_turn()
   enc_inactivity = 0 ;
 }
 
+void IRAM_ATTR isr_enc_preset_turn()
+{
+  sv uint32_t     old_state = 0x0001 ;                          // Previous state
+  sv int16_t      locrotcount = 0 ;                             // Local rotation count
+  uint8_t         act_state = 0 ;                               // The current state of the 2 PINs
+  uint8_t         inx ;                                         // Index in enc_state
+  sv const int8_t enc_states [] =                               // Table must be in DRAM (iram safe)
+  { 0,                    // 00 -> 00
+    -1,                   // 00 -> 01                           // dt goes HIGH
+    1,                    // 00 -> 10
+    0,                    // 00 -> 11
+    1,                    // 01 -> 00                           // dt goes LOW
+    0,                    // 01 -> 01
+    0,                    // 01 -> 10
+    -1,                   // 01 -> 11                           // clk goes HIGH
+    -1,                   // 10 -> 00                           // clk goes LOW
+    0,                    // 10 -> 01
+    0,                    // 10 -> 10
+    1,                    // 10 -> 11                           // dt goes HIGH
+    0,                    // 11 -> 00
+    1,                    // 11 -> 01                           // clk goes LOW
+    -1,                   // 11 -> 10                           // dt goes HIGH
+    0                     // 11 -> 11
+  } ;
+  // Read current state of CLK, DT pin. Result is a 2 bit binary number: 00, 01, 10 or 11.
+  act_state = ( digitalRead ( ini_block.enc_clk_pin ) << 1 ) +
+              digitalRead ( ini_block.enc_preset_dt_pin ) ;
+  inx = ( old_state << 2 ) + act_state ;                        // Form index in enc_states
+  locrotcount += enc_states[inx] ;                              // Get delta: 0, +1 or -1
+  if ( locrotcount == 4 )
+  {
+    rotationcount++ ;                                           // Divide by 4
+    locrotcount = 0 ;
+  }
+  else if ( locrotcount == -4 )
+  {
+    rotationcount-- ;                                           // Divide by 4
+    locrotcount = 0 ;
+  }
+  old_state = act_state ;                                       // Remember current status
+  enc_inactivity = 0 ;
+}
+
+
 
 //**************************************************************************************************
 //                                S H O W S T R E A M T I T L E                                    *
@@ -2812,6 +2857,7 @@ void readIOprefs()
     { "pin_ir",        &ini_block.ir_pin,           -1 },
     { "pin_enc_clk",   &ini_block.enc_clk_pin,      -1 },
     { "pin_enc_dt",    &ini_block.enc_dt_pin,       -1 },
+    { "pin_enc_prdt",    &ini_block.enc_preset_dt_pin,       -1 }, // preset encoder
     { "pin_enc_sw",    &ini_block.enc_sw_pin,       -1 },
     { "pin_tft_cs",    &ini_block.tft_cs_pin,       -1 }, // Display SPI version
     { "pin_tft_dc",    &ini_block.tft_dc_pin,       -1 }, // Display SPI version
@@ -3502,7 +3548,7 @@ void setup()
   if ( config_html_version  < 180806 ) dbgprint ( wvn, "config" ) ;
   if ( index_html_version   < 180102 ) dbgprint ( wvn, "index" ) ;
   if ( mp3play_html_version < 180918 ) dbgprint ( wvn, "mp3play" ) ;
-  if ( defaultprefs_version < 180816 ) dbgprint ( wvn, "defaultprefs" ) ;
+  if ( defaultprefs_version < 180820 ) dbgprint ( wvn, "defaultprefs" ) ;
   // Print some memory and sketch info
   dbgprint ( "Starting ESP32-radio running on CPU %d at %d MHz.  Version %s.  Free memory %d",
              xPortGetCoreID(),
@@ -3716,18 +3762,21 @@ void setup()
                ini_block.clk_server.c_str() ) ;          // GMT offset, daylight offset in seconds
   timeinfo.tm_year = 0 ;                                 // Set TOD to illegal
   // Init settings for rotary switch (if existing).
-  if ( ( ini_block.enc_clk_pin + ini_block.enc_dt_pin + ini_block.enc_sw_pin ) > 2 )
+  if ( ( ini_block.enc_clk_pin + ini_block.enc_dt_pin + ini_block.enc_preset_dt_pin + ini_block.enc_sw_pin ) > 3 )
   {
     attachInterrupt ( ini_block.enc_clk_pin, isr_enc_turn,   CHANGE ) ;
     attachInterrupt ( ini_block.enc_dt_pin,  isr_enc_turn,   CHANGE ) ;
+    // attachInterrupt ( ini_block.enc_clk_pin, isr_enc_turn,   CHANGE ) ;
+    // attachInterrupt ( ini_block.enc_preset_dt_pin,  isr_enc_preset_turn,   CHANGE ) ;
     attachInterrupt ( ini_block.enc_sw_pin,  isr_enc_switch, CHANGE ) ;
     dbgprint ( "Rotary encoder is enabled" ) ;
   }
   else
   {
-    dbgprint ( "Rotary encoder is disabled (%d/%d/%d)",
+    dbgprint ( "Rotary encoder is disabled (%d/%d/%d/%d)",
                ini_block.enc_clk_pin,
                ini_block.enc_dt_pin,
+               ini_block.enc_preset_dt_pin,
                ini_block.enc_sw_pin) ;
   }
   if ( NetworkFound )

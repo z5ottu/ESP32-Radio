@@ -1,6 +1,6 @@
 // Default preferences in raw data format for PROGMEM
 //
-#define defaultprefs_version 1808016
+#define defaultprefs_version 1808020
 const char defprefs_txt[] PROGMEM = R"=====(
 # Example configuration
 # Programmable input pins:
@@ -52,6 +52,7 @@ ir_C03F = downvolume = 2
 pin_ir = 35                                          # GPIO Pin number for IR receiver VS1838B
 pin_enc_clk = 25                                     # GPIO Pin number for rotary encoder "CLK"
 pin_enc_dt = 26                                      # GPIO Pin number for rotary encoder "DT"
+pin_enc_preset_dt = 35                               # GPIO Pin number for preset rotary encoder "DT"
 pin_enc_sw = 27                                      # GPIO Pin number for rotary encoder "SW"
 #
 pin_tft_cs = 15                                      # GPIO Pin number for TFT "CS"
@@ -79,6 +80,7 @@ pin_vs_dreq = 4                                      # GPIO Pin number for VS105
 // #
 // pin_enc_clk = 25                                     # GPIO Pin number for rotary encoder "CLK"
 // pin_enc_dt = 26                                      # GPIO Pin number for rotary encoder "DT"
+// pin_enc_preset_dt = 35                               # GPIO Pin number for preset rotary encoder "DT"
 // pin_enc_sw = 21                                      # GPIO Pin number for rotary encoder "SW"
 // pin_shutdownx = 22
 // pin_vs_cs = 32                                        # GPIO Pin number for VS1053 "CS"
